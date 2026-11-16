@@ -1,0 +1,14 @@
+docker-compose up -d
+
+python setup_bronze.py
+
+python orders_consumer.py
+
+python orders_producer.py
+
+
+
+
+docker-compose stop
+
+docker-compose start
