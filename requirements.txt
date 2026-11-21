@@ -1,1 +1,5 @@
-kagglehub
+# Kafka client for consuming messages from topic 'orders'
+kafka-python
+
+# ODBC driver interface for connecting to SQL Server (SupplyChain_DWH)
+pyodbc
