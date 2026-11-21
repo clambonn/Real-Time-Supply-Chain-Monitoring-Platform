@@ -11,7 +11,7 @@ from sqlalchemy import create_engine, text
 # CONFIGURATION
 # ==========================================
 
-TOPIC_NAME = 'orders_topic'
+TOPIC_NAME = 'orders'
 BOOTSTRAP_SERVERS = ['localhost:9092']
 GROUP_ID = 'dwh_staging_orders_group'
 
