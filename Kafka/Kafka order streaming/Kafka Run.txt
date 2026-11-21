@@ -1,14 +1,21 @@
 docker-compose up -d
 
-python setup_bronze.py
-
 python orders_consumer.py
 
 python orders_producer.py
 
 
-
-
 docker-compose stop
 
 docker-compose start
+```[cite: 5]
+
+---
+
+### ملخص سريع قبل التشغيل:
+* **`docker-compose.yml`**: سيبه زي ما هو بدون تعديل[cite: 4].
+* **`orders_producer.py`**: بيسحب الأوردرات من `SupplyChain_Source` ويحدث `source.etl_watermark`[cite: 10].
+* **`orders_consumer.py`**: بيدخل الأوردرات على `SupplyChain_DWH` عبر `staging.sp_insert_stg_order`[cite: 2].
+* **`setup_bronze.py` و `watermark.txt`**: مش محتاج تشغلهم تاني مع الإعدادات الجديدة[cite: 2, 7, 8, 10].
+
+جرب شغّل الأوامر دلوقتي، ولو ظهر معاك أي Error أو رسالة غريبة ابعتهالي نصلحها سوا.
