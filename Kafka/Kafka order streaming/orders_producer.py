@@ -11,11 +11,11 @@ from sqlalchemy import create_engine, text
 # CONFIGURATION
 # ==========================================
 
-TOPIC_NAME = 'orders_topic'
+TOPIC_NAME = 'orders'
 BOOTSTRAP_SERVERS = ['localhost:9092']
 
-BATCH_SIZE = 10
-BATCH_INTERVAL = 10
+BATCH_SIZE = 500
+BATCH_INTERVAL = 1
 
 
 # ==========================================
@@ -48,11 +48,7 @@ extract_orders_query = text("""
         o.order_id,
         o.customer_id,
         o.order_status,
-        o.order_purchase_timestamp,
-        o.order_approved_at,
-        o.order_delivered_carrier_date,
-        o.order_delivered_customer_date,
-        o.order_estimated_delivery_date
+        o.order_purchase_timestamp
     FROM source.orders o
     INNER JOIN source.etl_watermark w
         ON w.pipeline_name = 'orders'
@@ -113,18 +109,18 @@ producer = KafkaProducer(
 # ==========================================
 
 try:
-    print("Fetching new orders from SupplyChain_Source...")
+    print("Connecting to SupplyChain_Source and reading new orders...")
 
     with engine.connect() as conn:
         rows = conn.execute(extract_orders_query).mappings().all()
 
     total_orders = len(rows)
-    print(f"Found {total_orders} new orders.")
+    print(f"Total new orders found: {total_orders}")
 
     if total_orders == 0:
         print("No new orders to stream.")
     else:
-        print("\nStarting Kafka Producer...\n")
+        print(f"\nStreaming to Kafka topic '{TOPIC_NAME}'...\n")
 
         for i in range(0, total_orders, BATCH_SIZE):
             batch = rows[i:i + BATCH_SIZE]
@@ -135,33 +131,27 @@ try:
                 if not order_id:
                     raise ValueError("Missing order_id in source.orders.")
 
-                order_dict = {
-                    'order_id': order_id,
-                    'customer_id': serialize_value(row['customer_id']),
-                    'order_status': serialize_value(row['order_status']),
-                    'order_purchase_timestamp': serialize_value(row['order_purchase_timestamp']),
-                    'order_approved_at': serialize_value(row['order_approved_at']),
-                    'order_delivered_carrier_date': serialize_value(row['order_delivered_carrier_date']),
-                    'order_delivered_customer_date': serialize_value(row['order_delivered_customer_date']),
-                    'order_estimated_delivery_date': serialize_value(row['order_estimated_delivery_date']),
+                order_payload = {
+                    "order_id": order_id,
+                    "customer_id": serialize_value(row['customer_id']),
+                    "order_status": serialize_value(row['order_status']),
+                    "order_purchase_timestamp": serialize_value(row['order_purchase_timestamp']),
                 }
 
                 future = producer.send(
                     TOPIC_NAME,
                     key=order_id,
-                    value=order_dict
+                    value=order_payload
                 )
                 futures.append(future)
 
+            # Ensure all messages in the current batch are acked by Kafka
             for future in futures:
-                metadata = future.get(timeout=30)
-                print(
-                    f"Sent Order | Partition: {metadata.partition} | "
-                    f"Offset: {metadata.offset}"
-                )
+                future.get(timeout=30)
 
             producer.flush(timeout=30)
 
+            # Update watermark only after batch messages are confirmed sent
             last_row = batch[-1]
             with engine.begin() as conn:
                 conn.execute(
@@ -173,14 +163,15 @@ try:
                 )
 
             next_index = i + len(batch)
-            print(f"\n[SUCCESS] Processed rows {i} to {next_index - 1}")
-            print(f"Watermark updated to order_id: {last_row['order_id']}")
+            print(
+                f"[SUCCESS] Sent batch ({next_index}/{total_orders}) | "
+                f"Watermark -> ts: {last_row['order_purchase_timestamp']}, id: {serialize_value(last_row['order_id'])}"
+            )
 
-            if next_index < total_orders:
-                print(f"Waiting {BATCH_INTERVAL} seconds...\n")
+            if next_index < total_orders and BATCH_INTERVAL > 0:
                 time.sleep(BATCH_INTERVAL)
 
-        print("\nAll new orders sent successfully!")
+        print("\nAll orders sent and watermark updated successfully!")
 
 except KeyboardInterrupt:
     print("\nStopping Producer...")
