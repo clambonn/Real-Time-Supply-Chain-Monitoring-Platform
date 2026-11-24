@@ -1,0 +1,69 @@
+
+services:
+  hdfs-permissions:
+    image: apache/hadoop:3.5.0
+    user: root
+    command:
+      - bash
+      - -c
+      - chown 1001:100 /namenode-data /datanode-data
+    volumes:
+      - namenode_data:/namenode-data
+      - datanode_data:/datanode-data
+    restart: "no"
+
+  namenode:
+    image: apache/hadoop:3.5.0
+    hostname: namenode
+    container_name: supply-chain-namenode
+    command: ["hdfs", "namenode"]
+    depends_on:
+      hdfs-permissions:
+        condition: service_completed_successfully
+    environment:
+      ENSURE_NAMENODE_DIR: /hadoop-data/name
+      CORE-SITE.XML_fs.defaultFS: hdfs://namenode:9000
+      HDFS-SITE.XML_dfs.replication: "1"
+      HDFS-SITE.XML_dfs.namenode.name.dir: file:///hadoop-data/name
+    volumes:
+      - namenode_data:/hadoop-data
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    restart: unless-stopped
+
+  datanode:
+    image: apache/hadoop:3.5.0
+    hostname: datanode
+    container_name: supply-chain-datanode
+    command: ["hdfs", "datanode"]
+    depends_on:
+      namenode:
+        condition: service_started
+    environment:
+      CORE-SITE.XML_fs.defaultFS: hdfs://namenode:9000
+      HDFS-SITE.XML_dfs.replication: "1"
+      HDFS-SITE.XML_dfs.datanode.data.dir: file:///hadoop-data/data
+    volumes:
+      - datanode_data:/hadoop-data
+    ports:
+      - "9864:9864"
+      - "9866:9866"
+    restart: unless-stopped
+
+  spark-runner:
+    build:
+      context: ./spark
+      dockerfile: Dockerfile
+    image: supply-chain-spark:latest
+    depends_on:
+      namenode:
+        condition: service_started
+      datanode:
+        condition: service_started
+    volumes:
+      - ./spark:/workspace
+
+volumes:
+  namenode_data:
+  datanode_data:
