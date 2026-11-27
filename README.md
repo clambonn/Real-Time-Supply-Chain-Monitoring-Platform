@@ -58,3 +58,14 @@ Keep this terminal running while messages are published to the `orders` topic.
    GROUP BY order_id
    HAVING COUNT(*) > 1;
    ```
+
+---
+
+# Spark Phase (PySpark on HDFS)
+
+Spark analytics (validation + 4 Gold jobs) live in `spark/`. Documentation, Gold data contract and runbook:
+`Docs/Spark_Analytics.md`; completion report and test evidence: `Docs/Spark_Phase_Report.md`.
+
+```bash
+docker compose -f docker-compose.hadoop.yml run --rm -e HADOOP_USER_NAME=hadoop spark-runner bash run_pipeline.sh
+```

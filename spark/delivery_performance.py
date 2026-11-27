@@ -1,178 +1,90 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import (
-    col, count, avg, sum as spark_sum,
-    when, datediff, round, date_format
+"""Gold job 1 - Delivery performance.
+
+Inputs : Silver orders (olist_orders_cleaned.csv), Bronze items, Bronze customers
+Outputs: analytics/delivery_performance/{detail,monthly,state}  (Parquet)
+
+Grain of `detail`: one row per order (order_id unique). Items are aggregated to
+order level BEFORE joining, so the join cannot multiply rows.
+Only orders that can be evaluated (delivered + actual date + estimated date) are
+included. Orders with missing dates are never counted as on time; the number
+excluded is printed. Date anomalies are flagged (has_date_anomaly), never dropped.
+"""
+from pyspark.sql import functions as F
+
+import common as C
+
+spark = C.get_spark("DeliveryPerformance")
+
+orders = C.read_dataset(spark, "orders")
+items = C.read_dataset(spark, "items")
+customers = C.read_dataset(spark, "customers")
+
+# Fail early on an invalid key: a duplicated key would silently multiply rows in joins.
+for name, df, key in [("orders", orders, "order_id"), ("customers", customers, "customer_id")]:
+    dup = df.groupBy(key).count().filter("count > 1").count()
+    if dup:
+        raise ValueError(f"{name}.{key} has {dup} duplicated keys - run read_and_validate.py")
+
+items_agg = items.groupBy("order_id").agg(
+    F.count("*").alias("total_items"),
+    F.round(F.sum("price"), 2).alias("order_value"),
+    F.round(F.sum("freight_value"), 2).alias("freight_value"),
 )
 
-spark = (
-    SparkSession.builder
-    .appName("DeliveryPerformance")
-    .master("local[*]")
-    .config("spark.hadoop.fs.defaultFS", "hdfs://namenode:9000")
-    .getOrCreate()
+flagged = (
+    C.with_delivery_flags(orders)
+    .join(items_agg, "order_id", "left")
+    .join(customers.select("customer_id", "customer_state"), "customer_id", "left")
 )
 
-spark.sparkContext.setLogLevel("WARN")
-
-BASE = "hdfs://namenode:9000"
-OUTPUT = f"{BASE}/supply-chain/analytics/delivery_performance"
-
-# Find files recursively in HDFS
-fs = spark._jvm.org.apache.hadoop.fs.FileSystem.get(
-    spark._jsc.hadoopConfiguration()
-)
-Path = spark._jvm.org.apache.hadoop.fs.Path
-
-def find_file(filename):
-    for root in ["/supply-chain/cleaned", "/supply-chain/raw"]:
-        root_path = Path(root)
-
-        if not fs.exists(root_path):
-            continue
-
-        stack = [root_path]
-
-        while stack:
-            current = stack.pop()
-            for item in fs.listStatus(current):
-                if item.isDirectory():
-                    stack.append(item.getPath())
-                elif item.getPath().getName() == filename:
-                    return item.getPath().toString()
-
-    raise FileNotFoundError(f"File not found in HDFS: {filename}")
-
-orders_path = find_file("olist_orders_cleaned.csv")
-items_path = find_file("olist_order_items_dataset.csv")
-customers_path = find_file("olist_customers_dataset.csv")
-
-print("Reading HDFS datasets...")
-
-orders = spark.read.option("header", True).option(
-    "inferSchema", True
-).csv(orders_path)
-
-items = spark.read.option("header", True).option(
-    "inferSchema", True
-).csv(items_path)
-
-customers = spark.read.option("header", True).option(
-    "inferSchema", True
-).csv(customers_path)
-
-# Aggregate order items before joining
-items_agg = (
-    items.groupBy("order_id")
-    .agg(
-        count("order_item_id").alias("total_items"),
-        round(spark_sum("price"), 2).alias("order_value"),
-        round(spark_sum("freight_value"), 2).alias("freight_value")
-    )
-)
-
-# Join datasets
 delivery = (
-    orders.join(items_agg, "order_id", "left")
-    .join(
-        customers.select("customer_id", "customer_state"),
-        "customer_id",
-        "left"
-    )
+    flagged.filter("evaluable_delivery")
+    .withColumn("actual_delivery_days",
+                C.day_diff(F.col("order_delivered_customer_date"), F.col("order_purchase_timestamp")))
+    .withColumn("estimated_delivery_days",
+                C.day_diff(F.col("order_estimated_delivery_date"), F.col("order_purchase_timestamp")))
+    .withColumn("purchase_month", F.date_format("order_purchase_timestamp", "yyyy-MM"))
+    # Anomaly = customer delivery before carrier pick-up, or carrier pick-up before approval.
+    .withColumn("has_date_anomaly",
+                (F.col("order_delivered_customer_date") < F.col("order_delivered_carrier_date"))
+                | (F.col("order_delivered_carrier_date") < F.col("order_approved_at")))
+    .fillna({"total_items": 0, "order_value": 0.0, "freight_value": 0.0})
+    .withColumn("has_date_anomaly", F.coalesce("has_date_anomaly", F.lit(False)))
+    .cache()
 )
 
-# Keep orders with actual delivery dates
-delivery = delivery.filter(
-    col("order_delivered_customer_date").isNotNull()
-)
-
-# Calculate delivery metrics
-delivery = (
-    delivery
-    .withColumn(
-        "actual_delivery_days",
-        datediff(
-            col("order_delivered_customer_date"),
-            col("order_purchase_timestamp")
-        )
-    )
-    .withColumn(
-        "estimated_delivery_days",
-        datediff(
-            col("order_estimated_delivery_date"),
-            col("order_purchase_timestamp")
-        )
-    )
-    .withColumn(
-        "delay_days",
-        datediff(
-            col("order_delivered_customer_date"),
-            col("order_estimated_delivery_date")
-        )
-    )
-    .withColumn(
-        "is_late",
-        when(col("delay_days") > 0, 1).otherwise(0)
-    )
-    .withColumn(
-        "purchase_month",
-        date_format(col("order_purchase_timestamp"), "yyyy-MM")
-    )
-)
-
-# 1. Detailed delivery dataset
 detail = delivery.select(
-    "order_id",
-    "customer_id",
-    "customer_state",
-    "purchase_month",
-    "total_items",
-    "order_value",
-    "freight_value",
-    "actual_delivery_days",
-    "estimated_delivery_days",
-    "delay_days",
-    "is_late"
+    "order_id", "customer_id", "customer_state", "purchase_month", "total_items",
+    "order_value", "freight_value", "actual_delivery_days", "estimated_delivery_days",
+    "delay_days", "is_late", "has_date_anomaly",
 )
 
-# 2. Monthly performance
-monthly = (
-    delivery.groupBy("purchase_month")
-    .agg(
-        count("order_id").alias("total_orders"),
-        round(avg("actual_delivery_days"), 2).alias("avg_delivery_days"),
-        round(avg("estimated_delivery_days"), 2).alias("avg_estimated_days"),
-        spark_sum("is_late").alias("late_orders"),
-        round(avg("is_late") * 100, 2).alias("late_percentage"),
-        round(avg("delay_days"), 2).alias("avg_delay_days")
+
+def summarise(df, key):
+    return df.groupBy(key).agg(
+        F.count("*").alias("total_orders"),
+        F.round(F.avg("actual_delivery_days"), 2).alias("avg_delivery_days"),
+        F.round(F.avg("estimated_delivery_days"), 2).alias("avg_estimated_days"),
+        F.sum("is_late").alias("late_orders"),
+        F.round(F.avg("is_late") * 100, 2).alias("late_percentage"),
+        F.round(F.avg("delay_days"), 2).alias("avg_delay_days"),
     )
-    .orderBy("purchase_month")
-)
 
-# 3. State performance
-state = (
-    delivery.groupBy("customer_state")
-    .agg(
-        count("order_id").alias("total_orders"),
-        round(avg("actual_delivery_days"), 2).alias("avg_delivery_days"),
-        spark_sum("is_late").alias("late_orders"),
-        round(avg("is_late") * 100, 2).alias("late_percentage"),
-        round(avg("delay_days"), 2).alias("avg_delay_days")
-    )
-    .orderBy(col("late_percentage").desc())
-)
 
-# Save outputs as Parquet
-detail.write.mode("overwrite").parquet(f"{OUTPUT}/detail")
-monthly.write.mode("overwrite").parquet(f"{OUTPUT}/monthly")
-state.write.mode("overwrite").parquet(f"{OUTPUT}/state")
+monthly = summarise(delivery, "purchase_month").orderBy("purchase_month")
+state = summarise(delivery.filter(F.col("customer_state").isNotNull()), "customer_state") \
+    .orderBy(F.col("late_percentage").desc())
 
-print("\nDelivery Performance Job completed.")
-print(f"Delivered orders analyzed: {delivery.count():,}")
+total_orders = orders.count()
+analysed = delivery.count()
+C.write_parquet(detail, C.GOLD["delivery_detail"])
+C.write_parquet(monthly, C.GOLD["delivery_monthly"])
+C.write_parquet(state, C.GOLD["delivery_state"])
 
-print("\nMonthly summary:")
-monthly.show()
-
-print("\nState summary:")
-state.show()
-
+print("\nDelivery Performance job completed.")
+print(f"Orders in Silver: {total_orders:,}")
+print(f"Orders analysed (delivered with actual + estimated date): {analysed:,}")
+print(f"Orders excluded (not delivered / missing dates): {total_orders - analysed:,}")
+monthly.show(30)
+state.show(30)
 spark.stop()

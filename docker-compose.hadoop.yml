@@ -63,6 +63,7 @@ services:
         condition: service_started
     volumes:
       - ./spark:/workspace
+      - ./Data:/data:ro
 
 volumes:
   namenode_data:

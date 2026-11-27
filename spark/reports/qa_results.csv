@@ -1,0 +1,97 @@
+dataset,check,status,detail
+orders,row count,PASS,"99,441 rows"
+orders,column count,PASS,8 columns (expected 8)
+orders,NULLs in required columns,PASS,none
+orders,NULLs in optional columns,INFO,"order_approved_at=160, order_delivered_carrier_date=1,783, order_delivered_customer_date=2,965"
+orders,missing key ['order_id'],PASS,0 violations
+orders,duplicate key ['order_id'],PASS,0 violations
+orders,data types parse (dates/numbers/ints),PASS,5 typed columns OK
+payments,row count,PASS,"103,886 rows"
+payments,column count,PASS,5 columns (expected 5)
+payments,NULLs in required columns,PASS,none
+payments,"missing key ['order_id', 'payment_sequential']",PASS,0 violations
+payments,"duplicate key ['order_id', 'payment_sequential']",PASS,0 violations
+payments,data types parse (dates/numbers/ints),PASS,3 typed columns OK
+reviews,row count,PASS,"99,224 rows"
+reviews,column count,PASS,7 columns (expected 7)
+reviews,NULLs in required columns,PASS,none
+reviews,NULLs in optional columns,INFO,"review_comment_title=87,658, review_comment_message=58,274"
+reviews,"missing key ['review_id', 'order_id']",PASS,0 violations
+reviews,"duplicate key ['review_id', 'order_id']",PASS,0 violations
+reviews,data types parse (dates/numbers/ints),PASS,3 typed columns OK
+items,row count,PASS,"112,650 rows"
+items,column count,PASS,7 columns (expected 7)
+items,NULLs in required columns,PASS,none
+items,"missing key ['order_id', 'order_item_id']",PASS,0 violations
+items,"duplicate key ['order_id', 'order_item_id']",PASS,0 violations
+items,data types parse (dates/numbers/ints),PASS,4 typed columns OK
+customers,row count,PASS,"99,441 rows"
+customers,column count,PASS,5 columns (expected 5)
+customers,NULLs in required columns,PASS,none
+customers,missing key ['customer_id'],PASS,0 violations
+customers,duplicate key ['customer_id'],PASS,0 violations
+sellers,row count,PASS,"3,095 rows"
+sellers,column count,PASS,4 columns (expected 4)
+sellers,NULLs in required columns,PASS,none
+sellers,missing key ['seller_id'],PASS,0 violations
+sellers,duplicate key ['seller_id'],PASS,0 violations
+products,row count,PASS,"32,951 rows"
+products,column count,PASS,9 columns (expected 9)
+products,NULLs in required columns,PASS,none
+products,NULLs in optional columns,INFO,"product_category_name=610, product_name_lenght=610, product_description_lenght=610, product_photos_qty=610, product_weight_g=2, product_length_cm=2, product_height_cm=2, product_width_cm=2"
+products,missing key ['product_id'],PASS,0 violations
+products,duplicate key ['product_id'],PASS,0 violations
+products,data types parse (dates/numbers/ints),PASS,7 typed columns OK
+translation,row count,PASS,71 rows
+translation,column count,PASS,2 columns (expected 2)
+translation,NULLs in required columns,PASS,none
+translation,missing key ['product_category_name'],PASS,0 violations
+translation,duplicate key ['product_category_name'],PASS,0 violations
+geolocation,row count,PASS,"1,000,163 rows"
+geolocation,column count,PASS,5 columns (expected 5)
+geolocation,NULLs in required columns,PASS,none
+geolocation,data types parse (dates/numbers/ints),PASS,2 typed columns OK
+orders,status values,PASS,all statuses known
+orders,status distribution,INFO,"delivered=96,478, shipped=1,107, canceled=625, unavailable=609, invoiced=314, processing=301, created=5, approved=2"
+orders,approved before purchase,PASS,0 violations
+orders,carrier pick-up before purchase,WARNING,"166 orders (kept for investigation, not deleted)"
+orders,delivery before purchase,PASS,0 violations
+orders,estimated date before purchase,PASS,0 violations
+orders,carrier pick-up before approval,WARNING,"1,359 orders (kept, flagged in Gold as has_date_anomaly)"
+orders,delivery before carrier pick-up,WARNING,"23 orders (kept, flagged in Gold as has_date_anomaly)"
+orders,status 'delivered' without delivery date,WARNING,"8 orders (excluded from delivery metrics, not counted on time)"
+orders,delivery date on non-delivered order,WARNING,6 orders (excluded from delivery metrics)
+items,price > 0,PASS,0 violations
+items,freight_value >= 0,PASS,0 violations
+items,order_item_id >= 1,PASS,0 violations
+payments,payment_value >= 0,PASS,0 violations
+payments,payment_value = 0,WARNING,9 payments (mostly voucher / not_defined)
+payments,installments >= 1,WARNING,2 payments with installments < 1
+payments,payment_sequential >= 1,PASS,0 violations
+payments,payment_type known,PASS,0 violations
+payments,payment_type 'not_defined',WARNING,3 payments
+payments,payment_sequential continuous (1..n),WARNING,80 orders with gaps in payment_sequential
+reviews,review_score in 1..5,PASS,0 violations
+reviews,answer before creation,PASS,0 violations
+reviews,orders with multiple reviews,INFO,547 orders (allowed; key is review_id+order_id)
+reviews,review_id reused across orders,INFO,789 review_ids (not duplicates)
+reviews,missing comments,INFO,"title NULL=87,658, message NULL=58,274 (optional free text)"
+geolocation,lat/lng in Brazil bounds,WARNING,42 records
+geolocation,exact duplicate rows,INFO,"261,831 (zip prefixes have many coordinates by design)"
+products,dimensions/weight > 0,WARNING,4 records
+products,category present,WARNING,610 products without category (reported as 'unknown' in Gold)
+products,category found in translation table,WARNING,2 categories without English translation (Portuguese name kept)
+customers,customer_state is 2-letter code,PASS,0 violations
+sellers,seller_state is 2-letter code,PASS,0 violations
+items,order_id exists in orders.order_id,PASS,0 violations
+items,product_id exists in products.product_id,PASS,0 violations
+items,seller_id exists in sellers.seller_id,PASS,0 violations
+orders,customer_id exists in customers.customer_id,PASS,0 violations
+payments,order_id exists in orders.order_id,PASS,0 violations
+reviews,order_id exists in orders.order_id,PASS,0 violations
+orders,orders without items,INFO,"shipped=1, unavailable=603, created=5, canceled=164, invoiced=2 (expected for canceled/unavailable orders)"
+orders,orders without any payment,WARNING,1 orders
+payments,payment total = item price + freight,WARNING,"387 of 98,665 orders differ by > 0.01 (typically installment interest / vouchers)"
+orders,Silver matches local Data/cleaned,PASS,"rows 99,441 vs 99,441; content hash equal"
+payments,Silver matches local Data/cleaned,PASS,"rows 103,886 vs 103,886; content hash equal"
+reviews,Silver matches local Data/cleaned,PASS,"rows 99,224 vs 99,224; content hash equal"

@@ -1,0 +1,291 @@
+================ read_and_validate ================
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+[PASS   ] orders       column count: 8 columns (expected 8)
+[PASS   ] orders       NULLs in required columns: none
+[INFO   ] orders       NULLs in optional columns: order_approved_at=160, order_delivered_carrier_date=1,783, order_delivered_customer_date=2,965
+[PASS   ] orders       missing key ['order_id']: 0 violations
+[PASS   ] orders       duplicate key ['order_id']: 0 violations
+[PASS   ] payments     column count: 5 columns (expected 5)
+[PASS   ] payments     NULLs in required columns: none
+[PASS   ] payments     missing key ['order_id', 'payment_sequential']: 0 violations
+[PASS   ] payments     duplicate key ['order_id', 'payment_sequential']: 0 violations
+[PASS   ] payments     data types parse (dates/numbers/ints): 3 typed columns OK
+[PASS   ] reviews      column count: 7 columns (expected 7)
+[PASS   ] reviews      NULLs in required columns: none
+[INFO   ] reviews      NULLs in optional columns: review_comment_title=87,658, review_comment_message=58,274
+[PASS   ] reviews      missing key ['review_id', 'order_id']: 0 violations
+[PASS   ] reviews      duplicate key ['review_id', 'order_id']: 0 violations
+[PASS   ] reviews      data types parse (dates/numbers/ints): 3 typed columns OK
+[PASS   ] items        column count: 7 columns (expected 7)
+[PASS   ] items        NULLs in required columns: none
+[PASS   ] items        missing key ['order_id', 'order_item_id']: 0 violations
+[PASS   ] items        duplicate key ['order_id', 'order_item_id']: 0 violations
+[PASS   ] items        data types parse (dates/numbers/ints): 4 typed columns OK
+[PASS   ] customers    row count: 99,441 rows
+[PASS   ] customers    column count: 5 columns (expected 5)
+[PASS   ] customers    NULLs in required columns: none
+[PASS   ] customers    missing key ['customer_id']: 0 violations
+[PASS   ] customers    duplicate key ['customer_id']: 0 violations
+[PASS   ] sellers      row count: 3,095 rows
+[PASS   ] sellers      column count: 4 columns (expected 4)
+[PASS   ] sellers      NULLs in required columns: none
+[PASS   ] sellers      missing key ['seller_id']: 0 violations
+[PASS   ] sellers      duplicate key ['seller_id']: 0 violations
+[PASS   ] products     row count: 32,951 rows
+[PASS   ] products     column count: 9 columns (expected 9)
+[PASS   ] products     NULLs in required columns: none
+[INFO   ] products     NULLs in optional columns: product_category_name=610, product_name_lenght=610, product_description_lenght=610, product_photos_qty=610, product_weight_g=2, product_length_cm=2, product_height_cm=2, product_width_cm=2
+[PASS   ] products     missing key ['product_id']: 0 violations
+[PASS   ] products     duplicate key ['product_id']: 0 violations
+[PASS   ] products     data types parse (dates/numbers/ints): 7 typed columns OK
+[PASS   ] translation  row count: 71 rows
+[PASS   ] translation  column count: 2 columns (expected 2)
+[PASS   ] translation  NULLs in required columns: none
+[PASS   ] translation  missing key ['product_category_name']: 0 violations
+[PASS   ] translation  duplicate key ['product_category_name']: 0 violations
+[PASS   ] geolocation  column count: 5 columns (expected 5)
+[PASS   ] geolocation  NULLs in required columns: none
+[PASS   ] orders       status values: all statuses known
+[INFO   ] orders       status distribution: delivered=96,478, shipped=1,107, canceled=625, unavailable=609, invoiced=314, processing=301, created=5, approved=2
+[PASS   ] orders       approved before purchase: 0 violations
+[PASS   ] orders       delivery before purchase: 0 violations
+[PASS   ] orders       estimated date before purchase: 0 violations
+[PASS   ] items        price > 0: 0 violations
+[PASS   ] items        freight_value >= 0: 0 violations
+[PASS   ] items        order_item_id >= 1: 0 violations
+[PASS   ] payments     payment_value >= 0: 0 violations
+[PASS   ] payments     payment_sequential >= 1: 0 violations
+[PASS   ] payments     payment_type known: 0 violations
+[PASS   ] reviews      review_score in 1..5: 0 violations
+[PASS   ] reviews      answer before creation: 0 violations
+[INFO   ] reviews      orders with multiple reviews: 547 orders (allowed; key is review_id+order_id)
+[INFO   ] reviews      review_id reused across orders: 789 review_ids (not duplicates)
+[INFO   ] reviews      missing comments: title NULL=87,658, message NULL=58,274 (optional free text)
+[PASS   ] customers    customer_state is 2-letter code: 0 violations
+[PASS   ] sellers      seller_state is 2-letter code: 0 violations
+[PASS   ] items        order_id exists in orders.order_id: 0 violations
+[PASS   ] items        product_id exists in products.product_id: 0 violations
+[PASS   ] items        seller_id exists in sellers.seller_id: 0 violations
+[PASS   ] orders       customer_id exists in customers.customer_id: 0 violations
+[PASS   ] payments     order_id exists in orders.order_id: 0 violations
+[PASS   ] reviews      order_id exists in orders.order_id: 0 violations
+[INFO   ] orders       orders without items: invoiced=2, shipped=1, unavailable=603, created=5, canceled=164 (expected for canceled/unavailable orders)
+[PASS   ] payments     Silver matches local Data/cleaned: rows 103,886 vs 103,886; content hash equal
+[PASS   ] reviews      Silver matches local Data/cleaned: rows 99,224 vs 99,224; content hash equal
+================ delivery_performance ================
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+Delivery Performance job completed.
+Orders in Silver: 99,441
+Orders analysed (delivered with actual + estimated date): 96,470
+Orders excluded (not delivered / missing dates): 2,971
++--------------+------------+-----------------+------------------+-----------+---------------+--------------+
+|purchase_month|total_orders|avg_delivery_days|avg_estimated_days|late_orders|late_percentage|avg_delay_days|
++--------------+------------+-----------------+------------------+-----------+---------------+--------------+
+|       2016-09|           1|             55.0|              19.0|          1|          100.0|          36.0|
+|       2016-10|         265|            19.63|             56.31|          2|           0.75|        -36.68|
+|       2016-12|           1|              5.0|              27.0|          0|            0.0|         -22.0|
+|       2017-01|         750|            12.75|             40.16|         22|           2.93|        -27.41|
+|       2017-02|        1653|             13.3|              32.5|         49|           2.96|         -19.2|
+|       2017-03|        2546|            13.04|             25.37|        116|           4.56|        -12.33|
+|       2017-04|        2303|            15.02|             27.99|        151|           6.56|        -12.97|
+|       2017-05|        3545|            11.43|             24.92|        106|           2.99|         -13.5|
+|       2017-06|        3135|            12.01|             24.66|         95|           3.03|        -12.64|
+|       2017-07|        3872|            11.49|             23.96|        108|           2.79|        -12.47|
+|       2017-08|        4193|            11.02|             24.11|        122|           2.91|         -13.1|
+|       2017-09|        4150|            11.72|             23.07|        182|           4.39|        -11.35|
+|       2017-10|        4478|            11.73|             23.66|        187|           4.18|        -11.92|
+|       2017-11|        7288|            15.07|              23.2|        904|           12.4|         -8.12|
+|       2017-12|        5513|            15.31|             28.31|        411|           7.46|        -13.01|
+|       2018-01|        7069|            14.01|             26.94|        403|            5.7|        -12.93|
+|       2018-02|        6555|            16.87|             25.16|        926|          14.13|         -8.29|
+|       2018-03|        7003|            16.24|             22.67|       1328|          18.96|         -6.43|
+|       2018-04|        6798|            11.42|             24.31|        306|            4.5|         -12.9|
+|       2018-05|        6749|            11.34|             23.53|        443|           6.56|        -12.19|
+|       2018-06|        6096|             9.16|             28.41|         71|           1.16|        -19.24|
+|       2018-07|        6156|             8.89|             20.33|        208|           3.38|        -11.44|
+|       2018-08|        6351|             7.66|             15.82|        393|           6.19|         -8.16|
++--------------+------------+-----------------+------------------+-----------+---------------+--------------+
++--------------+------------+-----------------+------------------+-----------+---------------+--------------+
+|customer_state|total_orders|avg_delivery_days|avg_estimated_days|late_orders|late_percentage|avg_delay_days|
++--------------+------------+-----------------+------------------+-----------+---------------+--------------+
+|            AL|         397|             24.5|             33.21|         85|          21.41|         -8.71|
+|            MA|         717|            21.51|             31.08|        125|          17.43|         -9.57|
+|            SE|         335|            21.46|             31.48|         51|          15.22|        -10.02|
+|            PI|         476|            19.39|              30.7|         66|          13.87|        -11.31|
+|            CE|        1279|             21.2|              32.0|        176|          13.76|         -10.8|
+|            RR|          41|            29.34|             46.63|          5|           12.2|        -17.29|
+|            BA|        3256|            19.28|             30.07|        396|          12.16|        -10.79|
+|            RJ|       12350|            15.24|              27.0|       1495|          12.11|        -11.76|
+|            PA|         946|            23.73|             37.79|        106|          11.21|        -14.07|
+|            ES|        1995|            15.72|             26.22|        214|          10.73|         -10.5|
+|            PB|         517|            20.39|             33.65|         54|          10.44|        -13.26|
+|            TO|         274|             17.6|             29.73|         27|           9.85|        -12.13|
+|            MS|         701|            15.54|              26.6|         68|            9.7|        -11.05|
+|            PE|        1593|             18.4|             31.69|        153|            9.6|        -13.29|
+|            RN|         474|            19.22|             32.87|         44|           9.28|        -13.65|
+|            SC|        3546|             14.9|             26.41|        291|           8.21|         -11.5|
+|            GO|        1957|            15.54|             27.72|        128|           6.54|        -12.19|
+|            RS|        5344|            15.25|             29.16|        325|           6.08|        -13.91|
+|            MT|         886|             18.0|             32.37|         53|           5.98|        -14.36|
+|            DF|        2080|             12.9|             24.95|        118|           5.67|        -12.05|
+|            MG|       11354|            11.94|             25.19|        519|           4.57|        -13.24|
+|            SP|       40494|              8.7|             19.78|       1820|           4.49|        -11.08|
+|            PR|        4923|            11.94|             25.25|        199|           4.04|        -13.31|
+|            AC|          80|             21.0|             41.73|          3|           3.75|        -20.73|
+|            AP|          67|            27.18|             46.87|          2|           2.99|        -19.69|
+|            RO|         243|            19.28|             39.39|          7|           2.88|         -20.1|
+|            AM|         145|            26.36|             45.92|          4|           2.76|        -19.57|
++--------------+------------+-----------------+------------------+-----------+---------------+--------------+
+================ seller_performance ================
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+Seller Performance job completed.
+Order items: 112,650   Sellers: 3,095
++--------------------------------+------------+----------------+-----------+--------------+-------------+----------------+-----------+---------------+------------+---------------------+
+|seller_id                       |total_orders|total_items_sold|total_sales|avg_item_price|total_freight|delivered_orders|late_orders|late_percentage|seller_state|seller_city          |
++--------------------------------+------------+----------------+-----------+--------------+-------------+----------------+-----------+---------------+------------+---------------------+
+|4869f7a5dfa277a7dca6462dcf3b52b2|1132        |1156            |229472.63  |198.51        |20168.07     |1124            |118        |10.5           |SP          |guariba              |
+|53243585a1d6dc2643021fd1853d8905|358         |410             |222776.05  |543.36        |13080.63     |348             |12         |3.45           |BA          |lauro de freitas     |
+|4a3ca9315b744ce9f8e9374361493884|1806        |1987            |200472.92  |100.89        |35067.04     |1772            |172        |9.71           |SP          |ibitinga             |
+|fa1c13f2614d7b5c4749cbc52fecda94|585         |586             |194042.03  |331.13        |10042.7      |578             |53         |9.17           |SP          |sumare               |
+|7c67e1448b00f6e969d365cea6b010ab|982         |1364            |187923.89  |137.77        |51612.55     |973             |89         |9.15           |SP          |itaquaquecetuba      |
+|7e93a43ef30c4f03f38b393420bc753a|336         |340             |176431.87  |518.92        |6322.18      |319             |15         |4.7            |SP          |barueri              |
+|da8622b14eb17ae2831f4ac5b9dab84a|1314        |1551            |160236.57  |103.31        |24955.75     |1311            |87         |6.64           |SP          |piracicaba           |
+|7a67c85e85bb2ce8582c35f2203ad736|1160        |1171            |141745.53  |121.05        |20902.85     |1145            |60         |5.24           |SP          |sao paulo            |
+|1025f0e2d44d7041d6cf58b6550e0bfa|915         |1428            |138968.55  |97.32         |33892.14     |910             |72         |7.91           |SP          |sao paulo            |
+|955fee9216a65b617aa5c0531780ce60|1287        |1499            |135171.7   |90.17         |25430.98     |1261            |77         |6.11           |SP          |sao paulo            |
+|46dc3b2cc0980fb8ec44634e21d2718e|521         |542             |128111.19  |236.37        |11798.5      |503             |29         |5.77           |RJ          |rio de janeiro       |
+|6560211a19b47992c3666cc44a7e94c0|1854        |2033            |123304.83  |60.65         |27960.94     |1819            |96         |5.28           |SP          |sao paulo            |
+|620c87c171fb2a6dd6e8bb4dec959fc6|740         |798             |114774.5   |143.83        |14135.21     |722             |63         |8.73           |RJ          |petropolis           |
+|7d13fca15225358621be4086e1eb0964|565         |578             |113628.97  |196.59        |8632.05      |558             |64         |11.47          |SP          |ribeirao preto       |
+|5dceca129747e92ff8ef7a997dc4f8ca|325         |346             |112155.53  |324.15        |13661.39     |322             |18         |5.59           |SP          |santa barbara d´oeste|
+|1f50f920176fa81dab994f9023523100|1404        |1931            |106939.21  |55.38         |35165.77     |1399            |124        |8.86           |SP          |sao jose do rio preto|
+|cc419e0650a3c5ba77189a1882b7556a|1706        |1775            |104288.42  |58.75         |25668.99     |1651            |87         |5.27           |SP          |santo andre          |
+|a1043bafd471dff536d0c462352beb48|718         |770             |101901.16  |132.34        |31844.09     |702             |35         |4.99           |MG          |ilicinea             |
+|3d871de0142ce09b7081e2b9d1733cb1|1080        |1147            |94914.2    |82.75         |22433.51     |1064            |58         |5.45           |SP          |campo limpo paulista |
+|edb1ef5e36e0c8cd84eb3c9b003e486d|166         |175             |79284.55   |453.05        |3905.1       |165             |12         |7.27           |RJ          |teresopolis          |
++--------------------------------+------------+----------------+-----------+--------------+-------------+----------------+-----------+---------------+------------+---------------------+
+only showing top 20 rows
+================ product_category ================
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+Product & Category job completed.
+Items: 112,650  Total sales: 13,591,643.70
+Products: 32,951  Categories: 74
++----------------------+-----------------------------+---------------+----------------+---------------+-----------+-------------+---------+
+|product_category_name |product_category_name_english|has_translation|total_items_sold|unique_products|total_sales|total_freight|avg_price|
++----------------------+-----------------------------+---------------+----------------+---------------+-----------+-------------+---------+
+|beleza_saude          |health_beauty                |true           |9670            |2444           |1258681.34 |182566.73    |130.16   |
+|relogios_presentes    |watches_gifts                |true           |5991            |1329           |1205005.68 |100535.93    |201.14   |
+|cama_mesa_banho       |bed_bath_table               |true           |11115           |3029           |1036988.68 |204693.04    |93.3     |
+|esporte_lazer         |sports_leisure               |true           |8641            |2867           |988048.97  |168607.51    |114.34   |
+|informatica_acessorios|computers_accessories        |true           |7827            |1639           |911954.32  |147318.08    |116.51   |
+|moveis_decoracao      |furniture_decor              |true           |8334            |2657           |729762.49  |172749.3     |87.56    |
+|cool_stuff            |cool_stuff                   |true           |3796            |789            |635290.85  |84039.1      |167.36   |
+|utilidades_domesticas |housewares                   |true           |6964            |2335           |632248.66  |146149.11    |90.79    |
+|automotivo            |auto                         |true           |4235            |1900           |592720.11  |92664.21     |139.96   |
+|ferramentas_jardim    |garden_tools                 |true           |4347            |753            |485256.46  |98962.75     |111.63   |
++----------------------+-----------------------------+---------------+----------------+---------------+-----------+-------------+---------+
+only showing top 10 rows
++--------------------------------+----------------------+-----------------------------+---------------+----------------+------------+-----------+-------------+---------+
+|product_id                      |product_category_name |product_category_name_english|has_translation|total_items_sold|total_orders|total_sales|total_freight|avg_price|
++--------------------------------+----------------------+-----------------------------+---------------+----------------+------------+-----------+-------------+---------+
+|bb50f2e236e5eea0100680137654686c|beleza_saude          |health_beauty                |true           |195             |187         |63885.0    |3721.1       |327.62   |
+|6cdd53843498f92890544667809f1595|beleza_saude          |health_beauty                |true           |156             |151         |54730.2    |4363.79      |350.83   |
+|d6160fb7873f184099d9bc95e30376af|pcs                   |computers                    |true           |35              |35          |48899.34   |1426.84      |1397.12  |
+|d1c427060a0f73f6b889a5c7c61f2ac4|informatica_acessorios|computers_accessories        |true           |343             |323         |47214.51   |13761.52     |137.65   |
+|99a4788cb24856965c36a24e339b6058|cama_mesa_banho       |bed_bath_table               |true           |488             |467         |43025.56   |8046.04      |88.17    |
+|3dd2a17168ec895c781a9191c1e95ad7|informatica_acessorios|computers_accessories        |true           |274             |255         |41082.6    |7129.62      |149.94   |
+|25c38557cf793876c5abdd5931f922db|bebes                 |baby                         |true           |38              |38          |38907.32   |1404.63      |1023.88  |
+|5f504b3a1c75b73d6151be81eb05bdc9|cool_stuff            |cool_stuff                   |true           |63              |63          |37733.9    |3991.91      |598.95   |
+|53b36df67ebb7c41585e8d54d6772e08|relogios_presentes    |watches_gifts                |true           |323             |306         |37683.42   |2274.51      |116.67   |
+|aca2eb7d00ea1a7b8ebd4e68314663af|moveis_decoracao      |furniture_decor              |true           |527             |431         |37608.9    |7211.86      |71.36    |
++--------------------------------+----------------------+-----------------------------+---------------+----------------+------------+-----------+-------------+---------+
+only showing top 10 rows
+================ payment_analysis ================
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+Payment Analysis job completed.
+Orders in comparison: 99,441 (with payment+items: 98,665)
+Orders without items: 775   without payments: 1
+Orders where payment != price + freight (> 0.01): 303
++------------+------------------+------------+-------------+-----------+----------------+
+|payment_type|total_transactions|total_orders|total_payment|avg_payment|avg_installments|
++------------+------------------+------------+-------------+-----------+----------------+
+|credit_card |76795             |76505       |1.254208419E7|163.32     |3.51            |
+|boleto      |19784             |19784       |2869361.27   |145.03     |1.0             |
+|voucher     |5775              |3866        |379436.87    |65.7       |1.0             |
+|debit_card  |1529              |1528        |217989.79    |142.57     |1.0             |
+|not_defined |3                 |3           |0.0          |0.0        |1.0             |
++------------+------------------+------------+-------------+-----------+----------------+
++--------------------------------+-----------+---------+--------------------+----------------+-------------+----------------+-------------+----------------+------------------+------------------+----------------+
+|order_id                        |has_payment|has_items|payment_transactions|max_installments|total_payment|total_item_price|total_freight|expected_payment|payment_difference|diff_vs_item_price|payment_mismatch|
++--------------------------------+-----------+---------+--------------------+----------------+-------------+----------------+-------------+----------------+------------------+------------------+----------------+
+|051fcda88d997d3ff86012da2a556342|true       |true     |1                   |4               |51.7         |49.0            |7.6          |56.6            |-4.9              |2.7               |true            |
+|139be8870b91e71fd70bb366305c8cde|true       |true     |1                   |5               |142.46       |120.0           |13.18        |133.18          |9.28              |22.46             |true            |
+|21ca56b276a6b8d082a1261f33786085|true       |true     |2                   |4               |66.46        |49.9            |14.1         |64.0            |2.46              |16.56             |true            |
+|2dbe4c889950d30ef0988bbcac7ca86b|true       |true     |1                   |8               |89.01        |62.9            |14.17        |77.07           |11.94             |26.11             |true            |
+|2f9d4ee8ca77fe0951ebfe9064cad953|true       |true     |1                   |10              |105.19       |79.9            |11.17        |91.07           |14.12             |25.29             |true            |
+|320dcf288de15e4ff06ebbfce4e42c78|true       |true     |1                   |3               |81.37        |61.8            |25.75        |87.55           |-6.18             |19.57             |true            |
+|37311087440803cc1960343121d1de26|true       |true     |1                   |1               |326.79       |249.95          |76.86        |326.81          |-0.02             |76.84             |true            |
+|3837859eff41b5dbbd1dfad5a066d0ae|true       |true     |1                   |4               |44.15        |19.99           |18.23        |38.22           |5.93              |24.16             |true            |
+|3adc794e637a2ef67f006b35b36904a4|true       |true     |1                   |4               |49.91        |24.99           |21.15        |46.14           |3.77              |24.92             |true            |
+|3e24e141d5703b84337db96998991424|true       |true     |1                   |10              |266.94       |218.9           |17.29        |236.19          |30.75             |48.04             |true            |
++--------------------------------+-----------+---------+--------------------+----------------+-------------+----------------+-------------+----------------+------------------+------------------+----------------+
+only showing top 10 rows
+================ verify_gold ================
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+[PASS] delivery_monthly     schema matches contract: ok
+[PASS] delivery_monthly     row count > 0: 23 rows
+[PASS] delivery_monthly     unique key ['purchase_month']: 0 duplicated keys
+[PASS] delivery_monthly     no NULLs in non-nullable columns: none
+[PASS] delivery_state       schema matches contract: ok
+[PASS] delivery_state       row count > 0: 27 rows
+[PASS] delivery_state       unique key ['customer_state']: 0 duplicated keys
+[PASS] delivery_state       no NULLs in non-nullable columns: none
+[PASS] seller_summary       schema matches contract: ok
+[PASS] seller_summary       row count > 0: 3,095 rows
+[PASS] seller_summary       unique key ['seller_id']: 0 duplicated keys
+[PASS] seller_summary       no NULLs in non-nullable columns: none
+[PASS] seller_detail        schema matches contract: ok
+[PASS] seller_detail        unique key ['order_id', 'order_item_id']: 0 duplicated keys
+[PASS] seller_detail        no NULLs in non-nullable columns: none
+[PASS] product_products     schema matches contract: ok
+[PASS] product_products     row count > 0: 32,951 rows
+[PASS] product_products     unique key ['product_id']: 0 duplicated keys
+[PASS] product_products     no NULLs in non-nullable columns: none
+[PASS] product_categories   schema matches contract: ok
+[PASS] product_categories   row count > 0: 74 rows
+[PASS] product_categories   unique key ['product_category_name']: 0 duplicated keys
+[PASS] product_categories   no NULLs in non-nullable columns: none
+[PASS] payment_type         schema matches contract: ok
+[PASS] payment_type         row count > 0: 5 rows
+[PASS] payment_type         unique key ['payment_type']: 0 duplicated keys
+[PASS] payment_type         no NULLs in non-nullable columns: none
+[PASS] payment_order        schema matches contract: ok
+[PASS] payment_order        unique key ['order_id']: 0 duplicated keys
+[PASS] payment_order        no NULLs in non-nullable columns: none
+[PASS] seller_summary       totals equal items input: 112,650 / 13,591,643.70 / 2,251,909.54
+[PASS] seller_summary       late_orders <= delivered_orders <= total_orders:
+[PASS] product_products     no join multiplication (items & sales equal items input): 112,650 / 13,591,643.70
+[PASS] product_categories   no join multiplication (items & sales equal items input): 112,650 / 13,591,643.70
+[PASS] product_categories   unique_products sums to distinct products in products Gold:
+[PASS] delivery_detail      is_late consistent with delay_days:
+[PASS] delivery_detail      has no future/negative durations:
+[PASS] delivery_monthly     totals equal delivery_detail: 96,470 orders, 6,534 late
+[PASS] delivery_state       totals equal delivery_detail: 96,470 orders, 6,534 late
+[PASS] payment_type         totals equal payments input: 103,886 / 16,008,872.12
+[PASS] payment_order        total_payment equals payments input:
+[PASS] payment_order        total_item_price equals items input:
+[PASS] payment_order        one row per order in Silver orders or items/payments: 99,441 rows vs 99,441 orders
+GOLD VERIFICATION: 51 passed, 0 failed
+Spark phase pipeline finished successfully.
